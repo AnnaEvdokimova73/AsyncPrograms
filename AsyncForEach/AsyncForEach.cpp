@@ -4,46 +4,45 @@
 
 int blockCount = 4;
 
-void printBlockPart(std::vector<int>::iterator beg, std::vector<int>::iterator end)
-{
-    for (auto it = beg; it < end; ++it)
-    {
-        std::cout << *it << " ";
-    }
-}
 
-void forEach(std::vector<int> vec, int beg, int end)
+void parallForEach(std::vector<int> vec, std::vector<int>::iterator beg, std::vector<int>::iterator end)
 {
-    std::vector<int> vec1;
-    std::vector<int> vec2;
-    int endNew = (end % 2 != 0) ? end / 2 + 1 : end / 2;
-
-    if (vec.size() == 1 || vec.size() == 2 || vec.size() == 3)
+    int size = vec.size();
+    if (size < blockCount)
     {
-        std::async(std::launch::async, printBlockPart, vec.begin(), vec.end());
+        std::for_each(vec.cbegin(), vec.cend(), [](auto& val)
+            {
+                std::cout << val << " ";
+            });
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        return;
     }
-    for (auto i = 0; i < endNew; ++i)
+    else
     {
-        vec1.push_back(vec.at(i));
-    }
-    for (auto i = endNew; i < end; ++i)
-    {
-        vec2.push_back(vec.at(i));
-    }
-    forEach(vec1, beg, endNew);
-    forEach(vec2, endNew, vec2.size());
+        std::vector<int> vec1;
+        std::vector<int> vec2;
+        int endNew = (size % 2 != 0) ? size / 2 + 1 : size / 2;
 
-    //std::async(std::launch::async, printBlockPart, vec1.begin(), vec1.end());
-    //std::async(std::launch::async, printBlockPart, vec2.begin(), vec2.end());
-
-    return;
+        for (auto i = 0; i < endNew; ++i)
+        {
+            vec1.push_back(vec.at(i));
+        }
+        for (auto i = endNew; i < size; ++i)
+        {
+            vec2.push_back(vec.at(i));
+        }
+        std::async(std::launch::async, parallForEach, vec1, vec1.begin(), vec1.end());
+        parallForEach(vec2, vec2.begin(), vec2.end());
+    }
 }
+
 
 int main()
 {
-    std::vector<int> vec{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    std::vector<int> smallVec{ 1, 2, 3 };
+    std::vector<int> bigVec{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-    forEach(vec, 0, vec.size());
+    parallForEach(smallVec, smallVec.begin(), smallVec.end());
+    std::cout << std::endl;
+    parallForEach(bigVec, bigVec.begin(), bigVec.end());
+    std::cout << std::endl;
 }
